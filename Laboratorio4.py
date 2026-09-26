@@ -34,3 +34,27 @@ estadisticas = datos.describe().loc[
 
 print("\nEstadísticas descriptivas:")
 print(estadisticas)
+# ==========================================
+# 3. DETECCIÓN DE ALERTAS
+# ==========================================
+
+# Convertir los datos a arrays de NumPy
+voltaje = datos["voltaje_bateria_V"].to_numpy()
+rssi = datos["rssi_dbm"].to_numpy()
+
+# Criterios de alerta
+alerta_bateria = voltaje < 3.5
+alerta_rssi = rssi < -85
+
+# Alerta general: batería baja O señal débil
+alerta = alerta_bateria | alerta_rssi
+
+# Cantidad de alertas
+cantidad_bateria = np.sum(alerta_bateria)
+cantidad_rssi = np.sum(alerta_rssi)
+cantidad_alertas = np.sum(alerta)
+
+print("\nAlertas:")
+print("Batería baja:", cantidad_bateria)
+print("Señal débil:", cantidad_rssi)
+print("Al menos una alerta:", cantidad_alertas)
