@@ -34,9 +34,9 @@ estadisticas = datos.describe().loc[
 
 print("\nEstadísticas descriptivas:")
 print(estadisticas)
-# ==========================================
+
 # 3. DETECCIÓN DE ALERTAS
-# ==========================================
+
 
 # Convertir los datos a arrays de NumPy
 voltaje = datos["voltaje_bateria_V"].to_numpy()
@@ -58,3 +58,42 @@ print("\nAlertas:")
 print("Batería baja:", cantidad_bateria)
 print("Señal débil:", cantidad_rssi)
 print("Al menos una alerta:", cantidad_alertas)
+
+# 4. GRÁFICO DE TELEMETRÍA Y ALERTAS
+
+
+plt.figure(figsize=(12, 6))
+
+# Temperatura
+plt.plot(
+    datos.index,
+    datos["temperatura_C"],
+    label="Temperatura (°C)"
+)
+
+# Voltaje de batería
+plt.plot(
+    datos.index,
+    datos["voltaje_bateria_V"],
+    label="Voltaje batería (V)"
+)
+
+# Marcar los momentos donde hubo alguna alerta
+datos_alerta = datos[alerta]
+
+plt.scatter(
+    datos_alerta.index,
+    datos_alerta["temperatura_C"],
+    marker="x",
+    label="Alerta"
+)
+
+plt.xlabel("Fecha y hora")
+plt.ylabel("Valor")
+plt.title("Evolución temporal de la telemetría")
+plt.legend()
+plt.grid(True)
+plt.xticks(rotation=45)
+plt.tight_layout()
+
+plt.show()
