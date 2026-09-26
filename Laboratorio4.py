@@ -1,6 +1,6 @@
 # Laboratorio IV.2 - Análisis de datos de telemetría de un nodo IoT
 # Integrantes: Cristian  Vallejos Sebastian - Toftum Cristian
-# URL del repositorio: 
+# URL del repositorio: https://github.com/seba5680181-eng/Laboratorio-4.2
 
 import numpy as np
 import pandas as pd
@@ -23,3 +23,14 @@ print("Datos cargados correctamente.")
 print(datos.head())
 
 print("\nCantidad de registros:", len(datos))
+
+
+# 2. ESTADÍSTICAS DESCRIPTIVAS
+
+
+estadisticas = datos.describe().loc[
+    ["mean", "min", "max", "std"]
+]
+
+print("\nEstadísticas descriptivas:")
+print(estadisticas)
