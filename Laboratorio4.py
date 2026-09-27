@@ -7,99 +7,64 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
+# levanto el csv y clavo la columna timestamp como indice del dataframe
+df = pd.read_csv("telemetria_nodo_iot.csv", parse_dates=["timestamp"])
+df = df.set_index("timestamp")
 
-# 1. CARGAMOS  LOS DATOS
+# separo las columnas numericas que pide la consigna
+variables = ["temperatura_C", "humedad_pct", "voltaje_bateria_V", "rssi_dbm"]
 
-archivo = "telemetria_nodo_iot.csv"
+# armo el dataframe con las estadisticas descriptivas (punto 2)
+estadisticas = pd.DataFrame({
+    "media": df[variables].mean(),
+    "minimo": df[variables].min(),
+    "maximo": df[variables].max(),
+    "desvio_estandar": df[variables].std()
+})
 
-datos = pd.read_csv(
-    archivo,
-    parse_dates=["timestamp"]
-)
+print("--- Estadísticas Descriptivas ---")
+print(estadisticas, "\n")
 
-datos.set_index("timestamp", inplace=True)
+# convierto a numpy array para hacer las mascaras booleanas (punto 3)
+voltaje = df["voltaje_bateria_V"].to_numpy()
+rssi = df["rssi_dbm"].to_numpy()
 
-print("Datos cargados correctamente.")
-print(datos.head())
-
-print("\nCantidad de registros:", len(datos))
-
-
-# 2. ESTADÍSTICAS DESCRIPTIVAS
-
-
-estadisticas = datos.describe().loc[
-    ["mean", "min", "max", "std"]
-]
-
-print("\nEstadísticas descriptivas:")
-print(estadisticas)
-
-# 3. DETECCIÓN DE ALERTAS
-
-
-# Convertir los datos a arrays de NumPy
-voltaje = datos["voltaje_bateria_V"].to_numpy()
-rssi = datos["rssi_dbm"].to_numpy()
-
-# Criterios de alerta
+# criterios para las alertas: bateria baja o señal debil
 alerta_bateria = voltaje < 3.5
 alerta_rssi = rssi < -85
+alerta = alerta_bateria | alerta_rssi  # con que salte una ya cuenta
 
-# Alerta general: batería baja O señal débil
-alerta = alerta_bateria | alerta_rssi
+print("--- Resumen de Alertas ---")
+print(f"Batería baja: {np.sum(alerta_bateria)}")
+print(f"Señal débil: {np.sum(alerta_rssi)}")
+print(f"Total de alertas (al menos una): {np.sum(alerta)}\n")
 
-# Cantidad de alertas
-cantidad_bateria = np.sum(alerta_bateria)
-cantidad_rssi = np.sum(alerta_rssi)
-cantidad_alertas = np.sum(alerta)
+# meto la columna nueva al df original para tenerla a mano al graficar
+df["alerta"] = alerta
 
-print("\nAlertas:")
-print("Batería baja:", cantidad_bateria)
-print("Señal débil:", cantidad_rssi)
-print("Al menos una alerta:", cantidad_alertas)
+# armo el grafico de la evolucion temporal
+plt.figure(figsize=(10, 5))
+plt.plot(df.index, df["temperatura_C"], label="Temp (°C)")
+plt.plot(df.index, df["voltaje_bateria_V"], label="Voltaje (V)")
 
-# 4. GRÁFICO DE TELEMETRÍA Y ALERTAS
-
-
-plt.figure(figsize=(12, 6))
-
-# Temperatura
-plt.plot(
-    datos.index,
-    datos["temperatura_C"],
-    label="Temperatura (°C)"
-)
-
-# Voltaje de batería
-plt.plot(
-    datos.index,
-    datos["voltaje_bateria_V"],
-    label="Voltaje batería (V)"
-)
-
-# Marcar los momentos donde hubo alguna alerta
-datos_alerta = datos[alerta]
-
+# meto un scatter arriba para marcar con una cruz roja donde hubo alertas
 plt.scatter(
-    datos_alerta.index,
-    datos_alerta["temperatura_C"],
+    df.index[df["alerta"]],
+    df.loc[df["alerta"], "temperatura_C"],
+    color="red",
     marker="x",
-    label="Alerta"
+    label="Alerta detectada"
 )
 
 plt.xlabel("Fecha y hora")
-plt.ylabel("Valor")
-plt.title("Evolución temporal de la telemetría")
+plt.ylabel("Valores medidos")
+plt.title("Evolución de Temperatura y Voltaje")
 plt.legend()
-plt.grid(True)
-plt.xticks(rotation=45)
+plt.grid(True, linestyle="--", alpha=0.6)
 plt.tight_layout()
-
 plt.show()
 
-
-# Agrupo dia por dia y saco el resumen con las metricas minimas (punto 5)
+# agrupo dia por dia y saco el resumen con las metricas minimas (punto 5)
 resumen_diario = df.groupby(df.index.date).agg(
     temperatura_promedio=("temperatura_C", "mean"),
     temperatura_maxima=("temperatura_C", "max"),
@@ -114,8 +79,6 @@ resumen_diario.index.name = "fecha"
 print("--- Resumen Diario ---")
 print(resumen_diario, "\n")
 
-# exporto al excel en la hoja que pide el tp (requiere openpyxl)
+# exporto al excel en la hoja que pide el tp 
 resumen_diario.to_excel("resumen_telemetria_diario.xlsx", sheet_name="Resumen diario")
 print("Listo, se guardó el archivo excel.")
-
-
