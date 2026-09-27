@@ -97,3 +97,25 @@ plt.xticks(rotation=45)
 plt.tight_layout()
 
 plt.show()
+
+
+# Agrupo dia por dia y saco el resumen con las metricas minimas (punto 5)
+resumen_diario = df.groupby(df.index.date).agg(
+    temperatura_promedio=("temperatura_C", "mean"),
+    temperatura_maxima=("temperatura_C", "max"),
+    temperatura_minima=("temperatura_C", "min"),
+    voltaje_bateria_promedio=("voltaje_bateria_V", "mean"),
+    voltaje_bateria_minimo=("voltaje_bateria_V", "min"),
+    cantidad_alertas=("alerta", "sum")
+)
+
+resumen_diario.index.name = "fecha"
+
+print("--- Resumen Diario ---")
+print(resumen_diario, "\n")
+
+# exporto al excel en la hoja que pide el tp (requiere openpyxl)
+resumen_diario.to_excel("resumen_telemetria_diario.xlsx", sheet_name="Resumen diario")
+print("Listo, se guardó el archivo excel.")
+
+
